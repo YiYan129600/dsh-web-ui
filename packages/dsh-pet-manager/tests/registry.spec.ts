@@ -20,6 +20,7 @@ describe('built-in pet providers', () => {
     expect(pet).toBeDefined()
     expect(pet!.settingsNamespace).toBe('pet')
     expect(pet!.toggleMode).toBe('runtime')
+    expect(pet!.runtimeToggleFields).toEqual(['enabled', 'visible'])
   })
 
   it('seeds whale-girl as a restart-toggled provider', () => {

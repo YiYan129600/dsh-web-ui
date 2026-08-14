@@ -7,7 +7,8 @@ const BUILTIN_PET_PROVIDERS = [{
 		en: "Built-in Pet (Whale Girl)"
 	},
 	settingsNamespace: "pet",
-	toggleMode: "runtime"
+	toggleMode: "runtime",
+	runtimeToggleFields: ["enabled", "visible"]
 }, {
 	entryId: "whale-girl",
 	displayName: {

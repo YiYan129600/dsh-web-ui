@@ -9,6 +9,8 @@ export interface PetProviderManifest {
     };
     settingsNamespace: string;
     toggleMode: ToggleMode;
+    /** Settings fields set on a runtime toggle (default ['enabled']). */
+    runtimeToggleFields?: string[];
 }
 /** Built-in providers known to the manager (extensible via dsh.plugin.categories). */
 export declare const BUILTIN_PET_PROVIDERS: readonly PetProviderManifest[];

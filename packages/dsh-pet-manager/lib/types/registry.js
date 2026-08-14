@@ -5,6 +5,7 @@ export const BUILTIN_PET_PROVIDERS = [
         displayName: { zh: '内置桌宠（鲸鱼娘）', en: 'Built-in Pet (Whale Girl)' },
         settingsNamespace: 'pet',
         toggleMode: 'runtime',
+        runtimeToggleFields: ['enabled', 'visible'],
     },
     {
         entryId: 'whale-girl',

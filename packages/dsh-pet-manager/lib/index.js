@@ -112,11 +112,12 @@ var PetManagerService = class extends Service {
 				error: "settings-unavailable"
 			};
 			try {
-				await settings.mutate(settingsNamespace(provider.settingsNamespace), [{
+				const fields = provider.runtimeToggleFields ?? ["enabled"];
+				await settings.mutate(settingsNamespace(provider.settingsNamespace), fields.map((field) => ({
 					op: "set",
-					path: ["enabled"],
+					path: [field],
 					value: enabled
-				}]);
+				})));
 			} catch (error) {
 				return {
 					ok: false,

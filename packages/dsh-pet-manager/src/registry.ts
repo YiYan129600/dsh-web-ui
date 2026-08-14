@@ -7,6 +7,8 @@ export interface PetProviderManifest {
   displayName: { zh: string; en: string }
   settingsNamespace: string
   toggleMode: ToggleMode
+  /** Settings fields set on a runtime toggle (default ['enabled']). */
+  runtimeToggleFields?: string[]
 }
 
 /** Built-in providers known to the manager (extensible via dsh.plugin.categories). */
@@ -16,6 +18,7 @@ export const BUILTIN_PET_PROVIDERS: readonly PetProviderManifest[] = [
     displayName: { zh: '内置桌宠（鲸鱼娘）', en: 'Built-in Pet (Whale Girl)' },
     settingsNamespace: 'pet',
     toggleMode: 'runtime',
+    runtimeToggleFields: ['enabled', 'visible'],
   },
   {
     entryId: 'whale-girl',
