@@ -10,7 +10,8 @@
 import { Service } from '@deepseek-ai/cordis';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
+import { settingsNamespace } from '@deepseek-ai/dsh-settings';
 import { BUILTIN_PET_PROVIDERS, applyManagedDisabled, extractManagedEntries, } from "./registry.js";
 /** Stable cordis plugin name (matches cordis.patch.yml insert id). */
 export const name = 'pet-manager';
@@ -50,7 +51,7 @@ function resolveProfilePatch(ctx) {
     catch {
         dir = base;
     }
-    return join(dirname(dir), PROFILE_PATCH_FILE);
+    return join(dir, PROFILE_PATCH_FILE);
 }
 /** Cordis service exposing the pet-manager RPC domain. */
 export class PetManagerService extends Service {
@@ -113,7 +114,12 @@ export class PetManagerService extends Service {
             const settings = this.settings();
             if (!settings)
                 return { ok: false, error: 'settings-unavailable' };
-            await settings.mutate({ ns: provider.settingsNamespace }, [{ op: 'set', path: ['enabled'], value: enabled }]);
+            try {
+                await settings.mutate(settingsNamespace(provider.settingsNamespace), [{ op: 'set', path: ['enabled'], value: enabled }]);
+            }
+            catch (error) {
+                return { ok: false, error: error instanceof Error ? error.message : String(error) };
+            }
             return { ok: true, restartRequired: false, enabled };
         }
         const next = applyManagedDisabled(this.readPatch(), entryId, !enabled);

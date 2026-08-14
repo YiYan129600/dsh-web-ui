@@ -12,8 +12,9 @@ import { Context, Service } from '@deepseek-ai/cordis'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
+import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import {
   BUILTIN_PET_PROVIDERS,
   applyManagedDisabled,
@@ -67,7 +68,7 @@ function resolveProfilePatch(ctx: Context): string {
   } catch {
     dir = base
   }
-  return join(dirname(dir), PROFILE_PATCH_FILE)
+  return join(dir, PROFILE_PATCH_FILE)
 }
 
 /** Cordis service exposing the pet-manager RPC domain. */
@@ -80,7 +81,7 @@ export class PetManagerService extends Service {
     this.profilePatch = resolveProfilePatch(ctx)
   }
 
-  private settings(): { describe(o?: object): Array<{ ns: unknown; schema: unknown; value: unknown; revision: unknown }>; mutate(ns: unknown, ops: unknown[], rev?: number): Promise<unknown> } | undefined {
+  private settings(): any {
     return this.ctx.get('settings', false)
   }
 
@@ -129,7 +130,11 @@ export class PetManagerService extends Service {
     if (provider.toggleMode === 'runtime') {
       const settings = this.settings()
       if (!settings) return { ok: false, error: 'settings-unavailable' }
-      await settings.mutate({ ns: provider.settingsNamespace } as never, [{ op: 'set', path: ['enabled'], value: enabled }] as never[])
+      try {
+        await settings.mutate(settingsNamespace(provider.settingsNamespace) as never, [{ op: 'set', path: ['enabled'], value: enabled }] as never[])
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : String(error) }
+      }
       return { ok: true, restartRequired: false, enabled }
     }
     const next = applyManagedDisabled(this.readPatch(), entryId, !enabled)
