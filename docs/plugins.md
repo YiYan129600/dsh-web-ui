@@ -109,11 +109,13 @@ dsh plugin --profile web add link:<dsh-web-ui>/packages/dsh-web-ui-all
 
 索引只收录链接、不搬代码，条目版权归原作者，由维护者审核合并。
 
-## 多桌宠兼容包（dsh-multi-pet）
+## 多桌宠兼容（dsh-multi-pet / dsh-pet-manager）
 
 `packages/dsh-multi-pet` 是纯 patch bundle，让内置桌宠与 whale-girl 等第三方桌宠
-同时启用；详见其 README。本包**不进 `dsh-web-ui-all` 聚合**（聚合默认只装内置
-桌宠），需要时单独安装。
+同时启用；`packages/dsh-pet-manager` 提供「宠物管理」面板：每只宠物
+独立勾选（可多选），展开可见各插件注册的 settings 配置；运行时开关即时生效，
+入口级开关（如 whale-girl）写入受管区段并提示「重启后生效」。`dsh-multi-pet`
+单独按需安装，详见各包 README。
 
 ## 插件规范要点
 

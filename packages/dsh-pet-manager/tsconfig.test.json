@@ -1,0 +1,21 @@
+{
+  "// purpose": "Type-checks the test files without emitting them into lib/. Standalone (no composite) because tests touch the pure registry module only.",
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.test.tsbuildinfo"
+  },
+  "include": [
+    "src/registry.ts",
+    "tests/**/*.spec.ts"
+  ]
+}

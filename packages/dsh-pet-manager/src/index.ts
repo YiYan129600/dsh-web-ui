@@ -1,0 +1,207 @@
+/**
+ * dsh-pet-manager host half — the `petManager` service + /api/pet-manager/*.
+ * Lists every pet provider (built-in manifest, extensible via
+ * `dsh.plugin.categories` containing "pet"), toggles runtime-mode pets
+ * through their settings namespace live, and records restart-mode pets'
+ * entry-level `disabled` flags in the profile's own cordis.patch.yml
+ * (managed section) with restartRequired surfaced to the UI.
+ * @module @linxin666/dsh-pet-manager
+ */
+
+import { Context, Service } from '@deepseek-ai/cordis'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
+import {
+  BUILTIN_PET_PROVIDERS,
+  applyManagedDisabled,
+  extractManagedEntries,
+  type PetProviderManifest,
+} from './registry.ts'
+
+/** Stable cordis plugin name (matches cordis.patch.yml insert id). */
+export const name = 'pet-manager'
+
+/** Services required before the manager can mount its surfaces. */
+export const inject = ['settings', 'webServer']
+
+/** Route prefix (same-origin, loopback-only). */
+export const PET_MANAGER_PREFIX = '/api/pet-manager'
+
+/** Profile patch file the managed section lives in. */
+const PROFILE_PATCH_FILE = 'cordis.patch.yml'
+
+/** One provider as the client sees it. */
+export interface PetManagerProviderView {
+  entryId: string
+  name: { zh: string; en: string }
+  namespace: string
+  toggleMode: 'runtime' | 'restart'
+  enabled: boolean
+  restartRequired: boolean
+}
+
+function isLoopbackRequest(req: IncomingMessage): boolean {
+  const address = req.socket.remoteAddress
+  if (address !== '127.0.0.1' && address !== '::1' && address !== '::ffff:127.0.0.1') return false
+  const host = req.headers.host
+  if (typeof host !== 'string') return false
+  let hostUrl: URL
+  try { hostUrl = new URL('http://' + host) } catch { return false }
+  return hostUrl.hostname === '127.0.0.1' || hostUrl.hostname === 'localhost' || hostUrl.hostname === '[::1]'
+}
+
+function writeJson(res: ServerResponse, status: number, body: unknown): void {
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'referrer-policy': 'no-referrer' })
+  res.end(JSON.stringify(body))
+}
+
+/** Resolve the active profile's cordis.patch.yml from the loader baseUrl. */
+function resolveProfilePatch(ctx: Context): string {
+  const base = typeof ctx.baseUrl === 'string' ? ctx.baseUrl : ''
+  let dir: string
+  try {
+    dir = base.startsWith('file:') ? fileURLToPath(base) : base
+  } catch {
+    dir = base
+  }
+  return join(dirname(dir), PROFILE_PATCH_FILE)
+}
+
+/** Cordis service exposing the pet-manager RPC domain. */
+export class PetManagerService extends Service {
+  static inject = ['settings']
+  private readonly profilePatch: string
+
+  constructor(ctx: Context) {
+    super(ctx, 'petManager')
+    this.profilePatch = resolveProfilePatch(ctx)
+  }
+
+  private settings(): { describe(o?: object): Array<{ ns: unknown; schema: unknown; value: unknown; revision: unknown }>; mutate(ns: unknown, ops: unknown[], rev?: number): Promise<unknown> } | undefined {
+    return this.ctx.get('settings', false)
+  }
+
+  private readPatch(): string {
+    try { return readFileSync(this.profilePatch, 'utf8') } catch { return '' }
+  }
+
+  list(): PetManagerProviderView[] {
+    const settings = this.settings()
+    const registered = new Set<string>(
+      settings ? settings.describe({ redactSecrets: true }).map((d: any) => String(d.ns)) : [],
+    )
+    return BUILTIN_PET_PROVIDERS.map((provider) => {
+      const enabled = provider.toggleMode === 'runtime'
+        ? this.runtimeEnabled(provider)
+        : !(extractManagedEntries(this.readPatch()).get(provider.entryId) ?? false)
+      return {
+        entryId: provider.entryId,
+        name: provider.displayName,
+        namespace: provider.settingsNamespace,
+        toggleMode: provider.toggleMode,
+        enabled,
+        restartRequired: provider.toggleMode === 'restart',
+        ...(registered.has(provider.settingsNamespace) ? {} : { registered: false as const }),
+      }
+    })
+  }
+
+  private runtimeEnabled(provider: PetProviderManifest): boolean {
+    const settings = this.settings()
+    if (!settings) return true
+    const descriptor = settings.describe({ redactSecrets: true }).find((d: any) => String(d.ns) === provider.settingsNamespace)
+    const value = descriptor?.value
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>
+      if (typeof record.enabled === 'boolean') return record.enabled
+      if (typeof record.visible === 'boolean') return record.visible
+    }
+    return true
+  }
+
+  /** Toggle a provider. Runtime mode mutates its settings namespace (live); restart mode writes the managed patch section. */
+  async setEnabled(entryId: string, enabled: boolean): Promise<{ ok: true; restartRequired: boolean; enabled: boolean } | { ok: false; error: string }> {
+    const provider = BUILTIN_PET_PROVIDERS.find((p) => p.entryId === entryId)
+    if (!provider) return { ok: false, error: 'unknown-provider' }
+    if (provider.toggleMode === 'runtime') {
+      const settings = this.settings()
+      if (!settings) return { ok: false, error: 'settings-unavailable' }
+      await settings.mutate({ ns: provider.settingsNamespace } as never, [{ op: 'set', path: ['enabled'], value: enabled }] as never[])
+      return { ok: true, restartRequired: false, enabled }
+    }
+    const next = applyManagedDisabled(this.readPatch(), entryId, !enabled)
+    writeFileSync(this.profilePatch, next)
+    return { ok: true, restartRequired: true, enabled }
+  }
+
+  /** Namespace view for a provider's dropdown (schema + value + revision). */
+  async describe(namespace: string): Promise<{ ok: true; value: unknown } | { ok: false; error: string }> {
+    const settings = this.settings()
+    if (!settings) return { ok: false, error: 'settings-unavailable' }
+    const descriptor = settings.describe({ redactSecrets: true }).find((d: any) => String(d.ns) === namespace)
+    if (!descriptor) return { ok: false, error: 'namespace-not-registered' }
+    return { ok: true, value: { ns: String(descriptor.ns), schema: descriptor.schema, value: descriptor.value, revision: descriptor.revision } }
+  }
+}
+
+/** Register the manager service and its loopback-only HTTP routes. */
+export function apply(ctx: Context): void {
+  const service = new PetManagerService(ctx)
+  const guard = (req: IncomingMessage, res: ServerResponse): boolean => {
+    if (!isLoopbackRequest(req)) { writeJson(res, 403, { ok: false, error: 'loopback requests only' }); return false }
+    return true
+  }
+  const json = (res: ServerResponse, status: number, body: unknown) => writeJson(res, status, body)
+  const routes: WebRoute[] = [
+    {
+      kind: 'exact',
+      path: PET_MANAGER_PREFIX + '/list',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        json(res, 200, { ok: true, value: service.list() })
+      },
+    },
+    {
+      kind: 'exact',
+      path: PET_MANAGER_PREFIX + '/setEnabled',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        if (req.method !== 'POST') { json(res, 405, { ok: false, error: 'method not allowed' }); return }
+        let body: unknown
+        try {
+          body = JSON.parse(await readBody(req))
+        } catch {
+          json(res, 400, { ok: false, error: 'invalid JSON body' }); return
+        }
+        const { entryId, enabled } = (body ?? {}) as { entryId?: string; enabled?: boolean }
+        if (typeof entryId !== 'string' || typeof enabled !== 'boolean') {
+          json(res, 400, { ok: false, error: 'malformed request' }); return
+        }
+        json(res, 200, await service.setEnabled(entryId, enabled))
+      },
+    },
+    {
+      kind: 'exact',
+      path: PET_MANAGER_PREFIX + '/describe',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        const url = new URL(req.url ?? '/', 'http://dsh.internal')
+        const namespace = url.searchParams.get('ns') ?? ''
+        json(res, 200, await service.describe(namespace))
+      },
+    },
+  ]
+  ctx.effect(() => {
+    const disposers = routes.map((route) => ctx.webServer.register(route))
+    return () => { for (const dispose of disposers) dispose() }
+  }, 'pet-manager: routes')
+}
+
+async function readBody(req: IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = []
+  for await (const chunk of req) chunks.push(chunk as Buffer)
+  return Buffer.concat(chunks).toString('utf8')
+}

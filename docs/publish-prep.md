@@ -9,10 +9,11 @@
 
 ## 一、范围
 
-`packages/` 与 `packages/skins/` 下共 21 个插件包（截至快照日）：
+`packages/` 与 `packages/skins/` 下共 22 个插件包（截至快照日）：
 
 | 目录 | 包名 | 当前版本 | private |
 | --- | --- | --- | --- |
+| packages/dsh-pet-manager | @linxin666/dsh-pet-manager | 0.1.0 | true |
 | packages/dsh-multi-pet | @linxin666/dsh-multi-pet | 0.1.0 | true |
 | packages/dsh-task-board | @linxin666/dsh-client-ui-task-board | 0.1.1 | true |
 | packages/dsh-git-graph | @linxin666/dsh-client-ui-git-graph | 0.1.1 | true |

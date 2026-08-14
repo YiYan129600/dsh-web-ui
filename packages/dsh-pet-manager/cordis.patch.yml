@@ -1,0 +1,4 @@
+# dsh-pet-manager bundle patch: insert the manager plugin row.
+- insert:
+    - id: pet-manager
+      name: '@linxin666/dsh-pet-manager'
