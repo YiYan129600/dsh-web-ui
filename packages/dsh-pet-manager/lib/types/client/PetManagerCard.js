@@ -41,16 +41,19 @@ function schemaRows(schema, value) {
     const s = schema;
     if (!s)
         return [];
+    // schemastery serializes the root as a uid reference into refs; resolve it.
+    const root = s.uid !== undefined && s.refs ? (s.refs[s.uid] ?? s) : s;
     const record = (value ?? {});
-    if (s.type === 'object' && s.dict) {
-        return Object.entries(s.dict).map(([key, refId]) => {
+    if (root.type === 'object' && root.dict) {
+        return Object.entries(root.dict).map(([key, refId]) => {
             const prop = typeof refId === 'number' ? s.refs?.[refId] : undefined;
             const meta = prop?.meta ?? {};
             return { key, label: key, value: String(record[key] ?? ('default' in meta ? String(meta.default) : '')) };
         });
     }
-    if (s.properties) {
-        return Object.entries(s.properties).map(([key, prop]) => ({
+    if (root.properties) {
+        const props = root.properties;
+        return Object.entries(props).map(([key, prop]) => ({
             key,
             label: prop.title ?? prop.description ?? key,
             value: String(record[key] ?? ''),

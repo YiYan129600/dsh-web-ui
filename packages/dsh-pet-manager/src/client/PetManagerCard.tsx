@@ -54,18 +54,21 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 function schemaRows(schema: unknown, value: unknown): Array<{ key: string; label: string; value: string }> {
-  const s = schema as { type?: string; dict?: Record<string, unknown>; properties?: Record<string, { title?: string; description?: string }>; refs?: Record<string, { meta?: Record<string, unknown> }> } | null
+  const s = schema as { uid?: number; type?: string; dict?: Record<string, unknown>; properties?: Record<string, { title?: string; description?: string }>; refs?: Record<string, { meta?: Record<string, unknown> }> } | null
   if (!s) return []
+  // schemastery serializes the root as a uid reference into refs; resolve it.
+  const root: any = s.uid !== undefined && s.refs ? (s.refs[s.uid] ?? s) : s
   const record = (value ?? {}) as Record<string, unknown>
-  if (s.type === 'object' && s.dict) {
-    return Object.entries(s.dict).map(([key, refId]) => {
-      const prop = typeof refId === 'number' ? s.refs?.[refId] : undefined
-      const meta = prop?.meta ?? {}
+  if (root.type === 'object' && root.dict) {
+    return Object.entries(root.dict).map(([key, refId]) => {
+      const prop: any = typeof refId === 'number' ? s.refs?.[refId] : undefined
+      const meta: Record<string, unknown> = prop?.meta ?? {}
       return { key, label: key, value: String(record[key] ?? ('default' in meta ? String(meta.default) : '')) }
     })
   }
-  if (s.properties) {
-    return Object.entries(s.properties).map(([key, prop]) => ({
+  if (root.properties) {
+    const props = root.properties as Record<string, { title?: string; description?: string }>
+    return Object.entries(props).map(([key, prop]) => ({
       key,
       label: prop.title ?? prop.description ?? key,
       value: String(record[key] ?? ''),

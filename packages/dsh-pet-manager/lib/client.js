@@ -46,8 +46,9 @@ window.__ModuleLoader__.load({
 		function schemaRows(schema, value) {
 			const s = schema;
 			if (!s) return [];
+			const root = s.uid !== void 0 && s.refs ? s.refs[s.uid] ?? s : s;
 			const record = value ?? {};
-			if (s.type === "object" && s.dict) return Object.entries(s.dict).map(([key, refId]) => {
+			if (root.type === "object" && root.dict) return Object.entries(root.dict).map(([key, refId]) => {
 				const meta = (typeof refId === "number" ? s.refs?.[refId] : void 0)?.meta ?? {};
 				return {
 					key,
@@ -55,11 +56,14 @@ window.__ModuleLoader__.load({
 					value: String(record[key] ?? ("default" in meta ? String(meta.default) : ""))
 				};
 			});
-			if (s.properties) return Object.entries(s.properties).map(([key, prop]) => ({
-				key,
-				label: prop.title ?? prop.description ?? key,
-				value: String(record[key] ?? "")
-			}));
+			if (root.properties) {
+				const props = root.properties;
+				return Object.entries(props).map(([key, prop]) => ({
+					key,
+					label: prop.title ?? prop.description ?? key,
+					value: String(record[key] ?? "")
+				}));
+			}
 			return [];
 		}
 		/** The pet manager card. */
