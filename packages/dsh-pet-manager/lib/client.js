@@ -212,7 +212,7 @@ window.__ModuleLoader__.load({
 									borderTop: "1px solid #8882",
 									fontSize: 12
 								},
-								children: describes[provider.entryId] === void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								children: provider.entryId === "pet" ? props.renderSlot("pet-manager.settings", {}, { only: "pet-settings" }) : describes[provider.entryId] === void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 									style: { opacity: .6 },
 									children: "…"
 								}) : schemaRows(describes[provider.entryId].schema, describes[provider.entryId].value).map((field) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
@@ -251,6 +251,10 @@ window.__ModuleLoader__.load({
 				id: "pet-manager",
 				order: 150,
 				locale: NS,
+				children: { "pet-manager.settings": {
+					kind: "list",
+					scope: "root"
+				} },
 				inject: () => ({})
 			}, PetManagerCard));
 		}

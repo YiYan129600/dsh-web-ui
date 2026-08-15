@@ -17,6 +17,10 @@ export declare function apply(ctx: {
             order: number;
             locale: string;
             inject: () => unknown;
+            children?: Record<string, {
+                kind: string;
+                scope: string;
+            }>;
         }, component: unknown): unknown;
     };
     locale: {

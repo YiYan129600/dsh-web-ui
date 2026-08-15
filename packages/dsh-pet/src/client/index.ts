@@ -77,12 +77,12 @@ export type { PetSettingsCardFace, PetSettingsCardState } from './PetSettingsCar
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     /**
-     * The child slot the Web UI plugin group declares; this card registers
-     * into the group instead of the top-level `settings.plugin.item` list.
+     * The child slot the pet manager declares; this card registers into the
+     * pet manager's per-pet dropdown instead of the Web UI group list.
      * Spelled here with the same shape so this package can register without
      * depending on the sibling UI package.
      */
-    'web-ui.plugin.item': { kind: 'list'; scope: 'root'; owner: SettingsPluginItemOwnerProps }
+    'pet-manager.settings': { kind: 'list'; scope: 'root'; owner: SettingsPluginItemOwnerProps }
   }
 }
 
@@ -125,8 +125,8 @@ export function apply(ctx: ClientContext): void {
   // Plugin configuration card: one staged form over the `pet` settings
   // namespace, contributed to the Web UI plugin group.
   const petSettings = new PetSettingsCardController(settingsScope)
-  ctx.slots.inject('web-ui.plugin.item', () => ctx.slots.register({
-    name: 'web-ui.plugin.item',
+  ctx.slots.inject('pet-manager.settings', () => ctx.slots.register({
+    name: 'pet-manager.settings',
     id: 'pet-settings',
     order: 140,
     locale: NS,

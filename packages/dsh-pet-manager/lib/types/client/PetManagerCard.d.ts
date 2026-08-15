@@ -6,6 +6,7 @@
  * @module @linxin666/dsh-pet-manager/client
  */
 import { type ReactElement } from 'react';
+import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots';
 export declare const NS = "pet-manager";
 export declare const copy: {
     zh: {
@@ -32,10 +33,18 @@ export declare const copy: {
 /** The pet manager card. */
 export declare function PetManagerCard(props: {
     t: (k: string) => string;
+    renderSlot: PropsRenderSlots<'pet-manager.settings'>['renderSlot'];
 }): ReactElement;
 declare module '@deepseek-ai/dsh-client-ui-slots' {
     interface SlotMap {
         'web-ui.plugin.item': {
+            kind: 'list';
+            scope: 'root';
+            owner: {
+                children?: never;
+            };
+        };
+        'pet-manager.settings': {
             kind: 'list';
             scope: 'root';
             owner: {

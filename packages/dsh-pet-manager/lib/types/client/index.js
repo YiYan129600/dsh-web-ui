@@ -15,6 +15,7 @@ export function apply(ctx) {
         id: 'pet-manager',
         order: 150,
         locale: NS,
+        children: { 'pet-manager.settings': { kind: 'list', scope: 'root' } },
         inject: () => ({}),
     }, PetManagerCard));
 }

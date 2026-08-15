@@ -78,7 +78,7 @@ function schemaRows(schema: unknown, value: unknown): Array<{ key: string; label
 }
 
 /** The pet manager card. */
-export function PetManagerCard(props: { t: (k: string) => string }): ReactElement {
+export function PetManagerCard(props: { t: (k: string) => string; renderSlot: PropsRenderSlots<'pet-manager.settings'>['renderSlot'] }): ReactElement {
   const t = (key: string) => props.t(key) || copy.zh[key as keyof typeof copy.zh] || key
   const [providers, setProviders] = useState<ProviderView[] | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -157,14 +157,16 @@ export function PetManagerCard(props: { t: (k: string) => string }): ReactElemen
         )
         const body = open ? (
           <div style={{ padding: '6px 12px', borderTop: '1px solid #8882', fontSize: 12 }}>
-            {describes[provider.entryId] === undefined
-              ? <span style={{ opacity: 0.6 }}>…</span>
-              : schemaRows(describes[provider.entryId].schema, describes[provider.entryId].value).map((field) => (
-                <div key={field.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0' }}>
-                  <span style={{ opacity: 0.7 }}>{field.label}</span>
-                  <span>{field.value || '—'}</span>
-                </div>
-              ))}
+            {provider.entryId === 'pet'
+              ? props.renderSlot('pet-manager.settings', {}, { only: 'pet-settings' })
+              : describes[provider.entryId] === undefined
+                ? <span style={{ opacity: 0.6 }}>…</span>
+                : schemaRows(describes[provider.entryId].schema, describes[provider.entryId].value).map((field) => (
+                  <div key={field.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0' }}>
+                    <span style={{ opacity: 0.7 }}>{field.label}</span>
+                    <span>{field.value || '—'}</span>
+                  </div>
+                ))}
           </div>
         ) : null
         return (
@@ -181,5 +183,6 @@ export function PetManagerCard(props: { t: (k: string) => string }): ReactElemen
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     'web-ui.plugin.item': { kind: 'list'; scope: 'root'; owner: { children?: never } }
+    'pet-manager.settings': { kind: 'list'; scope: 'root'; owner: { children?: never } }
   }
 }

@@ -109,9 +109,11 @@ export function PetManagerCard(props) {
                 const row = (_jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px' }, children: [_jsxs("label", { style: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }, children: [_jsx("input", { type: "checkbox", checked: provider.enabled, onChange: () => toggle(provider), "aria-label": `${t('enable')}: ${provider.name.zh}` }), _jsx("span", { children: provider.name.zh })] }), provider.restartRequired
                             ? _jsx("span", { style: { fontSize: 11, opacity: 0.6, border: '1px solid #8884', borderRadius: 4, padding: '0 6px' }, children: "restart" })
                             : _jsx("span", { style: { fontSize: 11, opacity: 0.5 }, children: "live" }), _jsx("button", { type: "button", "aria-expanded": open, "aria-label": `${t(open ? 'collapse' : 'expand')}: ${provider.name.zh}`, onClick: () => expand(provider), style: { marginLeft: 'auto', border: 0, background: 'none', cursor: 'pointer', fontSize: 12 }, children: open ? '▴' : '▾' })] }));
-                const body = open ? (_jsx("div", { style: { padding: '6px 12px', borderTop: '1px solid #8882', fontSize: 12 }, children: describes[provider.entryId] === undefined
-                        ? _jsx("span", { style: { opacity: 0.6 }, children: "\u2026" })
-                        : schemaRows(describes[provider.entryId].schema, describes[provider.entryId].value).map((field) => (_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0' }, children: [_jsx("span", { style: { opacity: 0.7 }, children: field.label }), _jsx("span", { children: field.value || '—' })] }, field.key))) })) : null;
+                const body = open ? (_jsx("div", { style: { padding: '6px 12px', borderTop: '1px solid #8882', fontSize: 12 }, children: provider.entryId === 'pet'
+                        ? props.renderSlot('pet-manager.settings', {}, { only: 'pet-settings' })
+                        : describes[provider.entryId] === undefined
+                            ? _jsx("span", { style: { opacity: 0.6 }, children: "\u2026" })
+                            : schemaRows(describes[provider.entryId].schema, describes[provider.entryId].value).map((field) => (_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0' }, children: [_jsx("span", { style: { opacity: 0.7 }, children: field.label }), _jsx("span", { children: field.value || '—' })] }, field.key))) })) : null;
                 return (_jsxs("div", { style: { borderTop: '1px solid #8882' }, children: [row, body] }, provider.entryId));
             })] }));
 }

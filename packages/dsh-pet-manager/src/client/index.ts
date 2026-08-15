@@ -16,7 +16,7 @@ export function apply(ctx: {
   effect<T>(fn: () => T | (() => void), name?: string): T
   slots: {
     inject(id: string, fn: () => unknown): unknown
-    register(spec: { name: string; id: string; order: number; locale: string; inject: () => unknown }, component: unknown): unknown
+    register(spec: { name: string; id: string; order: number; locale: string; inject: () => unknown; children?: Record<string, { kind: string; scope: string }> }, component: unknown): unknown
   }
   locale: { register(ns: string, dict: unknown): unknown }
 }): void {
@@ -26,6 +26,7 @@ export function apply(ctx: {
     id: 'pet-manager',
     order: 150,
     locale: NS,
+    children: { 'pet-manager.settings': { kind: 'list', scope: 'root' } },
     inject: () => ({}),
   }, PetManagerCard))
 }
