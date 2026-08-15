@@ -38,15 +38,25 @@ async function api(path, init) {
     return (await res.json());
 }
 function schemaRows(schema, value) {
-    const props = schema?.properties;
-    if (!props)
+    const s = schema;
+    if (!s)
         return [];
     const record = (value ?? {});
-    return Object.entries(props).map(([key, prop]) => ({
-        key,
-        label: prop.title ?? prop.description ?? key,
-        value: String(record[key] ?? ''),
-    }));
+    if (s.type === 'object' && s.dict) {
+        return Object.entries(s.dict).map(([key, refId]) => {
+            const prop = typeof refId === 'number' ? s.refs?.[refId] : undefined;
+            const meta = prop?.meta ?? {};
+            return { key, label: key, value: String(record[key] ?? ('default' in meta ? String(meta.default) : '')) };
+        });
+    }
+    if (s.properties) {
+        return Object.entries(s.properties).map(([key, prop]) => ({
+            key,
+            label: prop.title ?? prop.description ?? key,
+            value: String(record[key] ?? ''),
+        }));
+    }
+    return [];
 }
 /** The pet manager card. */
 export function PetManagerCard(props) {

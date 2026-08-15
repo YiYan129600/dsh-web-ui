@@ -44,14 +44,23 @@ window.__ModuleLoader__.load({
 			return await res.json();
 		}
 		function schemaRows(schema, value) {
-			const props = schema?.properties;
-			if (!props) return [];
+			const s = schema;
+			if (!s) return [];
 			const record = value ?? {};
-			return Object.entries(props).map(([key, prop]) => ({
+			if (s.type === "object" && s.dict) return Object.entries(s.dict).map(([key, refId]) => {
+				const meta = (typeof refId === "number" ? s.refs?.[refId] : void 0)?.meta ?? {};
+				return {
+					key,
+					label: key,
+					value: String(record[key] ?? ("default" in meta ? String(meta.default) : ""))
+				};
+			});
+			if (s.properties) return Object.entries(s.properties).map(([key, prop]) => ({
 				key,
 				label: prop.title ?? prop.description ?? key,
 				value: String(record[key] ?? "")
 			}));
+			return [];
 		}
 		/** The pet manager card. */
 		function PetManagerCard(props) {
